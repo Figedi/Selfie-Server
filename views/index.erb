@@ -1,0 +1,45 @@
+<html>
+  <body>
+     <div id="images"></div>
+  </body>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script type="text/javascript">
+    var append = function(m) {
+      m = m.data;
+      if (typeof m == 'string') {
+        m = JSON.parse(m);
+      }
+      if (m.file) {
+        var img = "<img src='"+m.file.blob+"'>";
+        $('#images').append(img);
+      }
+    }
+    var ws = new WebSocket('ws://' + window.location.host + window.location.pathname);
+    ws.onmessage = append;
+    // $(document).ready(function() {
+
+    // })
+    // window.onload = function(){
+    //   (function(){
+    //     var show = function(el){
+    //       return function(msg){ el.innerHTML = msg + '<br />' + el.innerHTML; }
+    //     }(document.getElementById('msgs'));
+
+    //     var ws       =
+    //     ws.onopen    = function()  { show('websocket opened'); };
+    //     ws.onclose   = function()  { show('websocket closed'); }
+    //     ws.onmessage = function(m) { show('websocket message: ' +  m.data); };
+
+    //     var sender = function(f){
+    //       var input     = document.getElementById('input');
+    //       input.onclick = function(){ input.value = "" };
+    //       f.onsubmit    = function(){
+    //         ws.send(input.value);
+    //         input.value = "send a message";
+    //         return false;
+    //       }
+    //     }(document.getElementById('form'));
+    //   })();
+    // }
+  </script>
+</html>
