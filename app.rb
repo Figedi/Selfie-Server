@@ -1,5 +1,3 @@
-#!/usr/bin/env ruby
-
 require 'sinatra/base'
 require 'sinatra-websocket'
 require 'data_uri'
@@ -8,8 +6,6 @@ require 'base64'
 require 'coffee-script'
 require 'sass'
 require 'slim'
-
-
 
 class SassHandler < Sinatra::Base
 
@@ -27,7 +23,11 @@ class CoffeeHandler < Sinatra::Base
 
   get "/scripts/*.js" do
       filename = params[:splat].first
-      coffee filename.to_sym
+      if File.exist? "./assets/javascripts/#{filename}.coffee"
+        coffee filename.to_sym
+      else
+        send_file "./assets/javascripts/#{filename}.js", disposition: 'inline'
+      end
   end
 end
 
@@ -52,7 +52,7 @@ class Selfie < Sinatra::Base
       #src: basename is enough since all files are in root directory of public!
       response << { type: ALL_IMAGES, file: { b64: b64_string, name: File.basename(filepath), src: File.basename(filepath) } }
     end
-    response
+    response.sort_by {|e| -e[:file][:name].to_i }
   end
 
   # index route, index template is prepoulated with all available images,
@@ -60,8 +60,7 @@ class Selfie < Sinatra::Base
   get '/' do
     if !request.websocket?
       @images = collect_images_from_public
-      puts "============ images"
-      puts @images
+      @image_width = "max-width: #{100/@images.length}%; max-height: #{100/@images.length}%"
       slim :index
     else
       request.websocket do |ws|
@@ -91,8 +90,8 @@ class Selfie < Sinatra::Base
 
   post '/upload' do
 
-    if params[:file]
-      img_blob = URI::Data.new(params[:file])
+    if params[:b64] #b64 mode
+      img_blob = URI::Data.new(params[:b64])
       #collision free filename
       filename = if params[:filename]
         params[:filename]
@@ -112,8 +111,15 @@ class Selfie < Sinatra::Base
       File.open("./public/#{filename}.#{ending}", 'wb') do |f|
         f.write(img_blob.data)
       end
-      #create response object for websocket
-      response = { type: NEW_IMAGE, file: { blob: params[:file], name: filename } }.to_json
+    elsif params[:tempfile] #file attachment mode
+      file = params[:tempfile][:tempfile]
+      m = params[:tempfile][:filename].match(/\.(png|jpe?g|gif)$/)
+      filename = "#{Time.now.to_i.to_s}.#{m[1]}"
+      File.open("./public/#{filename}", 'wb') do |f|
+        f.write(file.read)
+      end
+      #create response object for websocket, src is only filename since we have a file in public folder now
+      response = { type: NEW_IMAGE, file: { src: filename, name: filename } }.to_json
       settings.sockets.each do |socket|
         socket.send(response)
       end
