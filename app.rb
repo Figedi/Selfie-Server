@@ -47,7 +47,7 @@ class Selfie < Sinatra::Base
 
   def collect_images_from_public
     response = []
-    Dir.glob('public/*') do |filepath|
+    Dir.glob('public/*.*') do |filepath|
       b64_string = Base64.encode64(File.read(filepath))
       #src: basename is enough since all files are in root directory of public!
       response << { type: ALL_IMAGES, file: { b64: b64_string, name: File.basename(filepath), src: File.basename(filepath) } }
@@ -89,28 +89,22 @@ class Selfie < Sinatra::Base
   # upload route, can upload a file from b64 encoded strings
 
   post '/upload' do
-
+    if b = request.body.read
+      params.merge! JSON.parse b
+    end
     if params[:b64] #b64 mode
       img_blob = URI::Data.new(params[:b64])
-      #collision free filename
-      filename = if params[:filename]
-        params[:filename]
-      else
-        dir_count = Dir.glob('./public/*').length
-        "image_#{dir_count}"
-      end
-      #extract fileending or default to jpg
-      match = filename.match(/^(\w+)\.(\w+)$/)
-      if match #if there is a fileending already provided:
-        filename = match[1]
-        ending = match[2]
-      else
-        ending = filename[/^\w+\.(\w+)$/, 1] || img_blob.content_type[/^\w+\/(\w+)$/, 1] || 'jpg'
-      end
+      ending = img_blob.content_type[/^\w+\/(\w+)$/, 1] || 'jpg'
+      filename = "#{Time.now.to_i.to_s}.#{ending}"
       #write file
-      File.open("./public/#{filename}.#{ending}", 'wb') do |f|
+      File.open("./public/#{filename}", 'wb') do |f|
         f.write(img_blob.data)
       end
+      response = { type: NEW_IMAGE, file: { src: filename, name: filename } }.to_json
+      settings.sockets.each do |socket|
+        socket.send(response)
+      end
+      status 200
     elsif params[:tempfile] #file attachment mode
       file = params[:tempfile][:tempfile]
       m = params[:tempfile][:filename].match(/\.(png|jpe?g|gif)$/)
