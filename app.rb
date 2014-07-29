@@ -60,7 +60,8 @@ class Selfie < Sinatra::Base
   get '/' do
     if !request.websocket?
       @images = collect_images_from_public
-      @image_width = "max-width: #{100/@images.length}%; max-height: #{100/@images.length}%"
+      images_length = @images.length == 0 ? 1 : @images.length
+      @image_width = "max-width: #{100/images_length}%; max-height: #{100/images_length}%"
       slim :index
     else
       request.websocket do |ws|
