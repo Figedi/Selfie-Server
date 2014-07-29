@@ -12,8 +12,5 @@ append = (m) ->
       "max-height": "#{w}%"
   return
 
-ws = new WebSocket("ws://#{window.location.host}#{window.location.pathname}")
+ws = new WebSocket("ws://#{window.location.host}#{window.location.pathname}/socket")
 ws.onmessage = append
-
-$ ->
-  #$('#images').isotope({layoutMode: 'masonry'})
