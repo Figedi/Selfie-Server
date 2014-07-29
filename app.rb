@@ -105,7 +105,7 @@ class Selfie < Sinatra::Base
       settings.sockets.each do |socket|
         socket.send(response)
       end
-      status 200
+      response
     elsif params[:tempfile] #file attachment mode
       file = params[:tempfile][:tempfile]
       m = params[:tempfile][:filename].match(/\.(png|jpe?g|gif)$/)
