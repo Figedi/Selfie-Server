@@ -74,8 +74,9 @@ class Selfie < Sinatra::Base
   # index route, index template is prepoulated with all available images,
 
   get '/' do
-    @images = collect_images_from_public || 1
-    @image_width = "max-width: #{100/@images.length}%; max-height: #{100/@images.length}%"
+    @images = collect_images_from_public
+    images_length = (_ = @images.length) == 0 ? 1 : _
+    @image_width = "max-width: #{100/images_length}%; max-height: #{100/images_length}%"
     slim :index
   end
 
