@@ -48,7 +48,7 @@ class Selfie < Sinatra::Base
   def deliver_mail(user_email_address, image_path)
     opts = {
       to: user_email_address,
-      from: 'kaminski.felix@gmail.com',
+      from: 'selfie.museumsnacht@gmail.com',
       subject: 'Selfie von der Museumsnacht',
       html_body: erb(:selfie_mail, locals: { email: user_email_address }),
       via: :smtp,
@@ -56,7 +56,7 @@ class Selfie < Sinatra::Base
         :address => 'smtp.gmail.com',
         :port => 587,
         :enable_starttls_auto => true,
-        :user_name => 'kaminski.felix',
+        :user_name => 'selfie.museumsnacht',
         :password => 'somepassword',
         :authentication => :plain,
         :domain => 'HELO'
