@@ -64,15 +64,9 @@ class Selfie < Sinatra::Base
     response.sort_by { |e| -e[:file][:name].to_i }
   end
 
-  # index route, index template is prepoulated with all available images,
   # socket connections setup the current setup
-  get '/' do
-    if !request.websocket?
-      @images = collect_images_from_public
-      @image_width = "max-width: #{100 / @images.length}%; max-height: #{100 / @images.length}%"
-      slim :index
-    else
-      request.websocket do |ws|
+  get '/socket' do
+    request.websocket do |ws|
         ws.onopen do
           settings.sockets << ws
         end
@@ -84,7 +78,15 @@ class Selfie < Sinatra::Base
           settings.sockets.delete(ws)
         end
       end
-    end
+  end
+
+  # index route, index template is prepoulated with all available images,
+
+  get '/' do
+    @images = collect_images_from_public
+    images_length = (_ = @images.length) == 0 ? 1 : _
+    @image_width = "max-width: #{100/images_length}%; max-height: #{100/images_length}%"
+    slim :index
   end
 
   # test, fallback to get all saved images
@@ -135,7 +137,7 @@ class Selfie < Sinatra::Base
       settings.sockets.each do |socket|
         socket.send(response)
       end
-      # plain head 200 as a response for the smartphone user
+      content_type :json
       response
     else
       status 406
