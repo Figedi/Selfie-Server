@@ -64,9 +64,12 @@ class Selfie < Sinatra::Base
     response.sort_by { |e| -e[:file][:name].to_i }
   end
 
-  # socket connections setup the current setup
-  get '/socket' do
-    request.websocket do |ws|
+
+
+  # index route, index template is prepoulated with all available images,
+  get '/' do
+    if request.websocket?
+      request.websocket do |ws|
         ws.onopen do
           settings.sockets << ws
         end
@@ -78,22 +81,19 @@ class Selfie < Sinatra::Base
           settings.sockets.delete(ws)
         end
       end
-  end
-
-  # index route, index template is prepoulated with all available images,
-
-  get '/' do
-    @images = collect_images_from_public
-    images_length = (_ = @images.length) == 0 ? 1 : _
-    @image_width = "max-width: #{100/images_length}%; max-height: #{100/images_length}%"
-    slim :index
+    else
+      @images = collect_images_from_public
+      images_length = (_ = @images.length) == 0 ? 1 : _
+      @image_width = "max-width: #{100/images_length}%; max-height: #{100/images_length}%"
+      slim :index
+    end
   end
 
   # test, fallback to get all saved images
   # not needed later on
-  get '/images.json' do
-    content_type :json
+  get '/images' do
     response = collect_images_from_public
+    content_type :json
     response.to_json
   end
 
@@ -108,9 +108,9 @@ class Selfie < Sinatra::Base
 
   # upload route, can upload a file from b64 encoded strings
   post '/upload' do
-    # if (b = request.body.read)
-    #   params.merge! JSON.parse b
-    # end
+    if (b = request.body.read)
+       params.merge! JSON.parse b
+    end
     if params[:b64] # b64 mode
       img_blob = URI::Data.new(params[:b64])
       ending = img_blob.content_type[/^\w+\/(\w+)$/, 1] || 'jpg'

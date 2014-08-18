@@ -18,7 +18,7 @@ append = (m) ->
     $("#images").justifiedGallery(opts)
   return
 
-ws = new WebSocket("ws://#{window.location.host}#{window.location.pathname}/socket")
+ws = new WebSocket("ws://#{window.location.host}#{window.location.pathname}/")
 ws.onmessage = append
 
 $ ->
