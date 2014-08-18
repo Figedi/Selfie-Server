@@ -37,7 +37,7 @@ class Selfie < Sinatra::Base
 
   set :server, 'thin'
   set :sockets, []
-  set :port, 3000
+  set :port, 80
 
   set :public_folder, File.dirname(__FILE__) + '/public'
   set :views, File.dirname(__FILE__) + '/views'
@@ -46,12 +46,24 @@ class Selfie < Sinatra::Base
   ALL_IMAGES = 1
 
   def deliver_mail(user_email_address, image_path)
-    Pony.mail :to => user_email_address,
-            :from => user_email_address, #todo: insert real mail
-            :subject => 'Selfie von der Museumsnacht',
-            :body => erb(:selfie_mail, locals: { email: user_email_address }),
-            :charset => 'utf-8',
-            :attachments => { "Selfie.png" => File.read(image_path) }
+    opts = {
+      to: user_email_address,
+      from: 'kaminski.felix@gmail.com',
+      subject: 'Selfie von der Museumsnacht',
+      html_body: erb(:selfie_mail, locals: { email: user_email_address }),
+      via: :smtp,
+      via_options: {
+        :address => 'smtp.gmail.com',
+        :port => 587,
+        :enable_starttls_auto => true,
+        :user_name => 'kaminski.felix',
+        :password => 'somepassword',
+        :authentication => :plain,
+        :domain => 'HELO'
+      },
+      attachments: { "Selfie.png" => File.read(image_path) }
+    }
+    Pony.mail(opts)
   end
 
   def collect_images_from_public
@@ -101,7 +113,7 @@ class Selfie < Sinatra::Base
     if (b = request.body.read)
       params.merge! JSON.parse b
     end
-    if params[:email] && !params[:email].empty? && params[:name]
+    if params[:email] && !params[:email].empty? && params[:name] && !params[:name].empty?
       deliver_mail(params[:email], File.expand_path("./public/#{params[:name]}"))
     end
   end
