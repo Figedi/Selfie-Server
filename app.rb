@@ -113,8 +113,21 @@ class Selfie < Sinatra::Base
     if (b = request.body.read)
       params.merge! JSON.parse b
     end
-    if params[:email] && !params[:email].empty? && params[:name] && !params[:name].empty?
-      deliver_mail(params[:email], File.expand_path("./public/#{params[:name]}"))
+    if params[:image] #if we need to upload an image first, do so
+      img_blob = URI::Data.new(params[:image])
+      ending = img_blob.content_type[/^\w+\/(\w+)$/, 1] || 'png'
+      filename = "#{Time.now.to_i}.#{ending}"
+      # write file
+      File.open("./public/#{filename}", 'wb') do |f|
+        f.write(img_blob.data)
+      end
+      if params[:email] && !params[:email].empty?
+        deliver_mail(params[:email], File.expand_path("./public/#{filename}"))
+      end
+    else #else just use the name params, file was uploaded
+      if params[:email] && !params[:email].empty? && params[:name] && !params[:name].empty?
+        deliver_mail(params[:email], File.expand_path("./public/#{params[:name]}"))
+      end
     end
   end
 
@@ -125,7 +138,7 @@ class Selfie < Sinatra::Base
     end
     if params[:b64] # b64 mode
       img_blob = URI::Data.new(params[:b64])
-      ending = img_blob.content_type[/^\w+\/(\w+)$/, 1] || 'jpg'
+      ending = img_blob.content_type[/^\w+\/(\w+)$/, 1] || 'png'
       filename = "#{Time.now.to_i}.#{ending}"
       # write file
       File.open("./public/#{filename}", 'wb') do |f|
